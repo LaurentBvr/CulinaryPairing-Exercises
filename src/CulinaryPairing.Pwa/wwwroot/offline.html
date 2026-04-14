@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CulinaryPairing - Hors ligne</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #512BD4 0%, #7c4dff 50%, #b47cff 100%);
+            color: white;
+            padding: 1rem;
+        }
+        .container { text-align: center; max-width: 480px; }
+        .icon { font-size: 5rem; margin-bottom: 1.5rem; display: block; }
+        h1 { font-size: 2rem; margin-bottom: 1rem; font-weight: 700; }
+        p { font-size: 1.1rem; line-height: 1.7; opacity: 0.9; margin-bottom: 0.5rem; }
+        .hint { font-size: 0.95rem; opacity: 0.75; margin-top: 1rem; font-style: italic; }
+        .retry-btn {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.9rem 2.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: #512BD4;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="icon">&#128268;</span>
+        <h1>Vous etes hors-ligne</h1>
+        <p>CulinaryPairing ne peut pas charger cette page car vous n'etes pas connecte a Internet.</p>
+        <p>Verifiez votre connexion Wi-Fi ou donnees mobiles, puis reessayez.</p>
+        <p class="hint">Les pages deja consultees restent accessibles hors-ligne.</p>
+        <button class="retry-btn" onclick="window.location.reload()">Reessayer</button>
+    </div>
+</body>
+</html>

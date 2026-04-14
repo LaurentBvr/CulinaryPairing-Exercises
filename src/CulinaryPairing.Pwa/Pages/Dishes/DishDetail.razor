@@ -1,0 +1,113 @@
+@page "/dishes/{DishId:guid}"
+@attribute [Authorize]
+@using CulinaryPairing.Pwa.Services
+@inject DishApiService DishService
+
+@if (_dish == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dishes">Plats</a></li>
+            <li class="breadcrumb-item active">@_dish.Name</li>
+        </ol>
+    </nav>
+
+    <h1>@_dish.Name</h1>
+
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Accords mets-boissons</h5></div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-6">
+                    <input type="text" class="form-control"
+                           placeholder="Nom de la boisson"
+                           @bind="_beverageName" @bind:event="oninput" />
+                </div>
+                <div class="col-3">
+                    <select class="form-select" @bind="_score">
+                        <option value="0">Faible</option>
+                        <option value="1">Moyen</option>
+                        <option value="2">Bon</option>
+                        <option value="3">Parfait</option>
+                    </select>
+                </div>
+                <div class="col-3">
+                    <button class="btn btn-success"
+                            @onclick="CreatePairing"
+                            disabled="@string.IsNullOrWhiteSpace(_beverageName)">
+                        Ajouter
+                    </button>
+                </div>
+            </div>
+
+            @if (_pairings.Any())
+            {
+                <table class="table">
+                    <thead>
+                        <tr><th>Boisson</th><th>Score</th><th>Statut</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in _pairings)
+                        {
+                            <tr class="@(p.IsValidated ? "table-success" : "")">
+                                <td>@p.BeverageName</td>
+                                <td><span class="badge @GetBadge(p.Score)">@GetLabel(p.Score)</span></td>
+                                <td>@(p.IsValidated ? "Valide" : "A valider")</td>
+                                <td>
+                                    @if (!p.IsValidated)
+                                    {
+                                        <button class="btn btn-sm btn-outline-success"
+                                                @onclick="() => Validate(p.Id)">Valider</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted">Aucun accord pour le moment.</p>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid DishId { get; set; }
+
+    private DishDetailDto? _dish;
+    private List<PairingHeader> _pairings = new();
+    private string _beverageName = "";
+    private int _score = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dish = await DishService.GetByIdAsync(DishId);
+        _pairings = await DishService.GetPairingsAsync(DishId);
+    }
+
+    private async Task CreatePairing()
+    {
+        if (string.IsNullOrWhiteSpace(_beverageName)) return;
+        if (await DishService.CreatePairingAsync(DishId, new CreatePairingRequest(_beverageName.Trim(), _score)))
+        {
+            _beverageName = "";
+            _score = 1;
+            _pairings = await DishService.GetPairingsAsync(DishId);
+        }
+    }
+
+    private async Task Validate(Guid id)
+    {
+        if (await DishService.ValidatePairingAsync(id))
+            _pairings = await DishService.GetPairingsAsync(DishId);
+    }
+
+    private string GetBadge(int s) => s switch { 0 => "bg-secondary", 1 => "bg-warning text-dark", 2 => "bg-success", 3 => "bg-primary", _ => "bg-secondary" };
+    private string GetLabel(int s) => s switch { 0 => "Faible", 1 => "Moyen", 2 => "Bon", 3 => "Parfait", _ => "?" };
+}

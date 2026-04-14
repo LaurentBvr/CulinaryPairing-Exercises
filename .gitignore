@@ -1,0 +1,45 @@
+## .NET
+bin/
+obj/
+publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## NuGet
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+## VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+## Visual Studio
+.vs/
+*.rsuser
+*.csproj.user
+
+## User secrets
+secrets.json
+
+## OS files
+Thumbs.db
+.DS_Store
+
+## Logs
+*.log
+logs/
+
+## LocalDB
+*.mdf
+*.ldf

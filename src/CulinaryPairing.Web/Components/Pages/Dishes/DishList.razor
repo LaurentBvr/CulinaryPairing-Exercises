@@ -1,0 +1,106 @@
+@page "/dishes"
+@inject GetDishesHandler DishesHandler
+@inject CreateDishHandler CreateHandler
+@rendermode InteractiveServer
+
+@using CulinaryPairing.Application.Features.Dishes
+
+<PageTitle>CulinaryPairing - Plats</PageTitle>
+
+<h1>Plats</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Creer un nouveau plat</h5>
+        <div class="row">
+            <div class="col-md-8">
+                <input type="text"
+                       class="form-control"
+                       placeholder="Nom du plat"
+                       @bind="_newDishName"
+                       @bind:event="oninput" />
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-primary"
+                        @onclick="CreateDish"
+                        disabled="@string.IsNullOrWhiteSpace(_newDishName)">
+                    Creer
+                </button>
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger mt-2">@_errorMessage</div>
+        }
+    </div>
+</div>
+
+@if (_dishes is null)
+{
+    <p><em>Chargement...</em></p>
+}
+else if (!_dishes.Any())
+{
+    <div class="alert alert-info">
+        Aucun plat pour le moment. Creez-en un ci-dessus !
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (var dish in _dishes)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@dish.Name</h5>
+                        <p class="card-text">
+                            <strong>@dish.IngredientCount</strong> ingredient(s)
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Cree le @dish.CreatedAt.ToString("dd/MM/yyyy")
+                            </small>
+                        </p>
+                        <a href="/dishes/@dish.Id"
+                           class="btn btn-outline-primary btn-sm">
+                            Voir les details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<DishSummaryDto>? _dishes;
+    private string _newDishName = "";
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDishes();
+    }
+
+    private async Task LoadDishes()
+    {
+        _dishes = await DishesHandler.HandleAsync();
+    }
+
+    private async Task CreateDish()
+    {
+        try
+        {
+            _errorMessage = null;
+            var command = new CreateDishCommand(_newDishName.Trim());
+            await CreateHandler.HandleAsync(command);
+            _newDishName = "";
+            await LoadDishes();
+        }
+        catch (ArgumentException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+    }
+}

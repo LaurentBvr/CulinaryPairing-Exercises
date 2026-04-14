@@ -1,0 +1,218 @@
+@page "/dishes/{DishId:guid}"
+@inject GetDishByIdHandler DishHandler
+@inject GetDishPairingsHandler PairingsHandler
+@inject CreatePairingHandler CreatePairingHandler
+@inject ValidatePairingHandler ValidateHandler
+@rendermode InteractiveServer
+
+@using CulinaryPairing.Application.Features.Dishes
+@using CulinaryPairing.Application.Features.Pairings
+@using CulinaryPairing.Domain.Pairings
+
+<PageTitle>CulinaryPairing - Detail plat</PageTitle>
+
+@if (_dish is null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dishes">Plats</a></li>
+            <li class="breadcrumb-item active">@_dish.Name</li>
+        </ol>
+    </nav>
+
+    <h1>@_dish.Name</h1>
+    <p class="text-muted">
+        Cree le @_dish.CreatedAt.ToString("dd MMMM yyyy")
+        - @_dish.Ingredients.Count ingredient(s)
+    </p>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Ingredients</h5>
+        </div>
+        <div class="card-body">
+            @if (_dish.Ingredients.Any())
+            {
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Categorie</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ingredient in _dish.Ingredients)
+                        {
+                            <tr>
+                                <td>@ingredient.Name</td>
+                                <td><span class="badge bg-info">@ingredient.Category</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted">Aucun ingredient pour le moment.</p>
+            }
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Accords mets-boissons</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Nom de la boisson"
+                           @bind="_newBeverageName"
+                           @bind:event="oninput" />
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="_newPairingScore">
+                        <option value="@PairingScore.Low">Faible</option>
+                        <option value="@PairingScore.Medium">Moyen</option>
+                        <option value="@PairingScore.High">Bon</option>
+                        <option value="@PairingScore.Perfect">Parfait</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-success"
+                            @onclick="CreatePairing"
+                            disabled="@string.IsNullOrWhiteSpace(_newBeverageName)">
+                        Ajouter
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_pairingError))
+            {
+                <div class="alert alert-danger">@_pairingError</div>
+            }
+
+            @if (_pairings is not null && _pairings.Any())
+            {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Boisson</th>
+                            <th>Score</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pairing in _pairings)
+                        {
+                            <tr class="@(pairing.IsValidated ? "table-success" : "")">
+                                <td>@pairing.BeverageName</td>
+                                <td>
+                                    <span class="badge @GetScoreBadgeClass(pairing.Score)">
+                                        @GetScoreLabel(pairing.Score)
+                                    </span>
+                                </td>
+                                <td>@(pairing.IsValidated ? "Valide" : "A valider")</td>
+                                <td>
+                                    @if (!pairing.IsValidated)
+                                    {
+                                        <button class="btn btn-sm btn-outline-success"
+                                                @onclick="() => ValidatePairing(pairing.Id)">
+                                            Valider
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted">Aucun accord pour le moment.</p>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid DishId { get; set; }
+
+    private DishDetailDto? _dish;
+    private IReadOnlyList<PairingSummaryDto>? _pairings;
+
+    private string _newBeverageName = "";
+    private PairingScore _newPairingScore = PairingScore.Medium;
+    private string? _pairingError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _dish = await DishHandler.HandleAsync(new GetDishByIdQuery(DishId));
+        _pairings = await PairingsHandler.HandleAsync(new GetDishPairingsQuery(DishId));
+    }
+
+    private async Task CreatePairing()
+    {
+        try
+        {
+            _pairingError = null;
+            var command = new CreatePairingCommand(
+                _newBeverageName.Trim(),
+                null,
+                DishId,
+                _newPairingScore);
+
+            await CreatePairingHandler.HandleAsync(command);
+            _newBeverageName = "";
+            _newPairingScore = PairingScore.Medium;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            _pairingError = ex.Message;
+        }
+    }
+
+    private async Task ValidatePairing(Guid pairingId)
+    {
+        try
+        {
+            _pairingError = null;
+            await ValidateHandler.HandleAsync(new ValidatePairingCommand(pairingId));
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            _pairingError = ex.Message;
+        }
+    }
+
+    private string GetScoreBadgeClass(PairingScore score) => score switch
+    {
+        PairingScore.Low => "bg-secondary",
+        PairingScore.Medium => "bg-warning text-dark",
+        PairingScore.High => "bg-success",
+        PairingScore.Perfect => "bg-primary",
+        _ => "bg-secondary"
+    };
+
+    private string GetScoreLabel(PairingScore score) => score switch
+    {
+        PairingScore.Low => "Faible",
+        PairingScore.Medium => "Moyen",
+        PairingScore.High => "Bon",
+        PairingScore.Perfect => "Parfait",
+        _ => "Inconnu"
+    };
+}

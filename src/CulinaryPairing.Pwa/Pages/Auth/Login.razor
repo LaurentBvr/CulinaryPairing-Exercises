@@ -1,0 +1,55 @@
+@page "/login"
+@using CulinaryPairing.Pwa.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<h1>Connexion</h1>
+
+<div class="card" style="max-width: 400px;">
+    <div class="card-body">
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert-danger">@_error</div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" @bind="_email" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Mot de passe</label>
+            <input type="password" class="form-control" @bind="_password" />
+        </div>
+        <button class="btn btn-primary w-100" @onclick="HandleLogin" disabled="@_loading">
+            @if (_loading) { <span>Connexion...</span> } else { <span>Se connecter</span> }
+        </button>
+        <p class="mt-3 text-center">
+            Pas de compte ? <a href="/register">S'inscrire</a>
+        </p>
+    </div>
+</div>
+
+@code {
+    private string _email = "";
+    private string _password = "";
+    private string? _error;
+    private bool _loading;
+
+    private async Task HandleLogin()
+    {
+        _loading = true;
+        _error = null;
+
+        var result = await AuthService.LoginAsync(_email, _password);
+        if (result.Success)
+        {
+            Navigation.NavigateTo("/dishes");
+        }
+        else
+        {
+            _error = result.Error;
+        }
+
+        _loading = false;
+    }
+}

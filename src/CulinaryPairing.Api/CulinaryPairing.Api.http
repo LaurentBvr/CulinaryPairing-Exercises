@@ -1,0 +1,6 @@
+@CulinaryPairing.Api_HostAddress = http://localhost:5044
+
+GET {{CulinaryPairing.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,11 @@
+@page "/redirect-to-login"
+@inject NavigationManager Navigation
+
+<p>Redirection...</p>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo("/login");
+    }
+}

@@ -1,0 +1,73 @@
+@page "/dishes"
+@attribute [Authorize]
+@using CulinaryPairing.Pwa.Services
+@inject DishApiService DishService
+
+<h1>Plats</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Creer un nouveau plat</h5>
+        <div class="row">
+            <div class="col-8">
+                <input type="text" class="form-control"
+                       placeholder="Nom du plat"
+                       @bind="_newName" @bind:event="oninput" />
+            </div>
+            <div class="col-4">
+                <button class="btn btn-primary"
+                        @onclick="CreateDish"
+                        disabled="@string.IsNullOrWhiteSpace(_newName)">
+                    Creer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_dishes == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else if (!_dishes.Any())
+{
+    <div class="alert alert-info">Aucun plat. Creez-en un !</div>
+}
+else
+{
+    <div class="row">
+        @foreach (var dish in _dishes)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@dish.Name</h5>
+                        <p class="card-text"><strong>@dish.IngredientCount</strong> ingredient(s)</p>
+                        <a href="/dishes/@dish.Id" class="btn btn-outline-primary btn-sm">Details</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<DishHeader>? _dishes;
+    private string _newName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dishes = await DishService.GetAllAsync();
+    }
+
+    private async Task CreateDish()
+    {
+        if (string.IsNullOrWhiteSpace(_newName)) return;
+        var request = new CreateDishRequest(Guid.NewGuid(), _newName.Trim());
+        if (await DishService.CreateAsync(request))
+        {
+            _newName = "";
+            _dishes = await DishService.GetAllAsync();
+        }
+    }
+}
